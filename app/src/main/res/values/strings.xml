@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">SISCONFE Aluno</string>
+    <string name="title_activity_login">SISCONFE Aluno</string>
+    <string name="message_required_inputs_login">Por favor, preencha todos os campos corretamente.</string>
+    <string name="ok">OK</string>
+    <string name="connection_failure">Falha na conexão com o servidor. Tente novamente!</string>
+    <string name="incorrect_data_login">Registro de Professor ou Senha incorretos!</string>
+    <string name="title_activity_activity_disciplinas">DISCIPLINAS</string>
+    <string name="title_activity_cadastrar">CadastrarActivity</string>
+</resources>

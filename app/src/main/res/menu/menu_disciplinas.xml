@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".Views.ActivityLogin">
+    <item
+        android:id="@+id/logout"
+        android:icon="@mipmap/ic_exit_to_app_white_36dp"
+        android:orderInCategory="100"
+        android:title="Sair"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/refresh"
+        android:icon="@mipmap/ic_refresh_white_36dp"
+        android:orderInCategory="99"
+        android:title="Buscar chamada abertar"
+        app:showAsAction="always" />
+</menu>
