@@ -147,17 +147,13 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        mGoogleApiClient.connect();
-    }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) { mGoogleApiClient.connect(); }
 
     @Override
     public void onLocationChanged(Location location) {
         ALUNO.setLatitude(location.getLatitude() + "");
         ALUNO.setLongitude(location.getLongitude() + "");
-
     }
-
 
     public class getDisciplinasAluno extends AsyncTask<String, Integer, Integer> {
         private String status = "";
@@ -211,6 +207,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
         @Override
         protected void onPreExecute() {
+            chamadaAberta = null;
         }
 
         @Override
@@ -311,7 +308,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
                 List<NameValuePair> param = new ArrayList<NameValuePair>();
                 param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", ALUNO.getRa()));
-                param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", chamadaAberta.getString("rp")));
+                param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", chamadaAberta.getString("tb_prof_rp")));
                 param.add(new BasicNameValuePair("tb_lista_freq_id_diario", chamadaAberta.getString("id_diario")));
                 param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", chamadaAberta.getString("codigo_disciplina")));
                 param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", ALUNO.getLatitude()));
@@ -346,7 +343,6 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
             builder = new AlertDialog.Builder(ActivityDisciplinas.this);
             if (CONEXAO && status.equalsIgnoreCase("1")) {
 
-                //Alert Confirm Insert
                 if (presenca.equalsIgnoreCase("1")) {
                     builder.setMessage("Presença autenticada com sucesso ! ").setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
