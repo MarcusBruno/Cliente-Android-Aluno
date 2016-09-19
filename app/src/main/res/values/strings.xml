@@ -6,5 +6,7 @@
     <string name="connection_failure">Falha na conexão com o servidor. Tente novamente!</string>
     <string name="incorrect_data_login">Registro de Professor ou Senha incorretos!</string>
     <string name="title_activity_activity_disciplinas">DISCIPLINAS</string>
-    <string name="title_activity_cadastrar">CadastrarActivity</string>
+    <string name="title_activity_cadastrar">Cadastrar</string>
+    <string name="title_activity_lista_frequencia">Lista de Frequencia</string>
+    <string name="title_activity_recuperar_senha">RecuperarSenhaActivity</string>
 </resources>

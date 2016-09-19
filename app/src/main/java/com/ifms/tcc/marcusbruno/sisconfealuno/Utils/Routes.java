@@ -10,6 +10,8 @@ public class Routes {
     private static final String URL_BUSCAR_DISCIPLINAS_ALUNO = URL+"todo/disciplinas/aluno/";
     private static final String URL_AUTENTICAR_PRESENÇA = URL+ "todo/aluno/atenticar/presenca/";
     private static final String URL_CADASTRAR_ALUNO = URL+ "todo/aluno/cadastrar/";
+    private static final String URL_BUSCAR_LISTA_FREQUENCIA_ALUNO = URL+ "todo/aluno/listafrequencia/";
+    private static final String URL_RECUPERAR_SENHA_ALUNO = URL+ "todo/aluno/recuperar/senha/";
 
     public static String getUrlLoginAluno() {
         return URL_LOGIN_ALUNO;
@@ -25,5 +27,13 @@ public class Routes {
 
     public static String getUrlCadastrarAluno() {
         return URL_CADASTRAR_ALUNO;
+    }
+
+    public static String getUrlBuscarListaFrequenciaAluno() {
+        return URL_BUSCAR_LISTA_FREQUENCIA_ALUNO;
+    }
+
+    public static String getUrlRecuperarSenhaAluno() {
+        return URL_RECUPERAR_SENHA_ALUNO;
     }
 }

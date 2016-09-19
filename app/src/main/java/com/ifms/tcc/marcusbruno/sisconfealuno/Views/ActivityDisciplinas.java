@@ -1,24 +1,21 @@
 package com.ifms.tcc.marcusbruno.sisconfealuno.Views;
 
-import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -32,7 +29,6 @@ import com.ifms.tcc.marcusbruno.sisconfealuno.Models.Aluno;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Models.Disciplina;
 import com.ifms.tcc.marcusbruno.sisconfealuno.R;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.GeoCoordinate;
-import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.MacAddress;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.Routes;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.ServiceHandler;
 
@@ -42,13 +38,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
@@ -61,8 +52,9 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest loc;
     private ListView disciplinasLV;
-    private ArrayList<Disciplina> disciplinas;
+    protected static ArrayList<Disciplina> DISCIPLINAS;
     private ArrayList<String> disciplinasAdapter;
+    private int itemSelected;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +76,40 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         new getChamadaAberta().execute();
         new getDisciplinasAluno().execute();
     }
+
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+        AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        itemSelected = acmi.position;
+
+        menu.setHeaderTitle("Opções ");
+        //GroupID - ItemId - OrderForId
+        menu.add(0, 1, 0, "Visualizar Fatas/Presenças");
+        menu.add(0, 2, 1, "Enviar Notificação aos Alunos");
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+
+            Intent i = new Intent(ActivityDisciplinas.this, ListaFrequenciaActivity.class);
+            i.putExtra("codigoDisciplina", DISCIPLINAS.get(itemSelected).getCodigo().toString());
+            i.putExtra("nomeDisciplina",  DISCIPLINAS.get(itemSelected).getNome());
+            startActivity(i);
+            finish();
+        } else if (item.getItemId() == 2) {
+            Toast.makeText(getApplicationContext(), "Opc 2", Toast.LENGTH_LONG).show();
+        } else if (item.getItemId() == 3) {
+            Toast.makeText(getApplicationContext(), "Opc 3", Toast.LENGTH_LONG).show();
+        } else {
+            return false;
+        }
+        return true;
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -175,13 +201,13 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                     //Tratamento em caso do objeto retornar null;
                     if (!jsonObj.equals("")) {
                         CONEXAO = true;
-                        disciplinas = new ArrayList<>();
+                        DISCIPLINAS = new ArrayList<>();
                         disciplinasAdapter = new ArrayList<>();
 
                         for (int i = 0; i < jsonObj.length(); i++) {
                             JSONObject c = jsonObj.getJSONObject(i);
                             Disciplina d = new Disciplina(c.getString("codigo"), c.getString("nome"), c.getString("descricao"));
-                            disciplinas.add(d);
+                            DISCIPLINAS.add(d);
                             disciplinasAdapter.add(d.getCodigo() + " : " + d.getNome());
                         }
                     }

@@ -1,5 +1,7 @@
 package com.ifms.tcc.marcusbruno.sisconfealuno.Models;
 
+import java.util.ArrayList;
+
 /**
  * Created by marcus-bruno on 8/15/16.
  */
@@ -11,6 +13,7 @@ public class Aluno {
     private String mac_address;
     private String latitude;
     private String longitude;
+    private ArrayList<FaltasEPresencas> faltasEPresencas;
 
 
     public Aluno(String ra, String nome, String telefone, String email, String mac_address) {
@@ -68,4 +71,12 @@ public class Aluno {
     public String getLongitude() { return longitude; }
 
     public void setLongitude(String longitude) { this.longitude = longitude; }
+
+    public ArrayList<FaltasEPresencas> getFaltasEPresencas() {
+        return faltasEPresencas;
+    }
+
+    public void setFaltasEPresencas(ArrayList<FaltasEPresencas> faltasEPresencas) {
+        this.faltasEPresencas = faltasEPresencas;
+    }
 }

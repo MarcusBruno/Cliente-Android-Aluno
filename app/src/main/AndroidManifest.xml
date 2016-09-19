@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/if_logo"
@@ -40,6 +41,16 @@
         <activity
             android:name=".Views.CadastrarActivity"
             android:label="@string/title_activity_cadastrar"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".Views.ListaFrequenciaActivity"
+            android:label="@string/title_activity_lista_frequencia"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".Views.RecuperarSenhaActivity"
+            android:label="@string/title_activity_recuperar_senha"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
