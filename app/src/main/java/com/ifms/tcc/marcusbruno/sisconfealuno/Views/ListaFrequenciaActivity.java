@@ -1,5 +1,7 @@
 package com.ifms.tcc.marcusbruno.sisconfealuno.Views;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -28,13 +30,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 public class ListaFrequenciaActivity extends AppCompatActivity {
     ServiceHandler sh = new ServiceHandler();
     private boolean CONEXAO;
     private Aluno ALUNO = LoginActivity.ALUNO;
-    private TableLayout tl;
-    private TextView tv1, tv2, tv3;
     private ArrayList<FaltasEPresencas> listaFrequencia;
     private String codigoDisciplina;
     private String nomeDisciplina;
@@ -117,7 +118,10 @@ public class ListaFrequenciaActivity extends AppCompatActivity {
             date.setTextColor(Color.BLACK);
 
             try {
-                Date d = sdf.parse(listaFrequencia.get(i).getDataTime());
+                //Formatter Date
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));//Set timezone
+                Date d = formatter.parse(listaFrequencia.get(i).getDataTime());
                 formattedTime = output.format(d);
                 date.setText(formattedTime);
             } catch (ParseException e) {
@@ -152,5 +156,12 @@ public class ListaFrequenciaActivity extends AppCompatActivity {
             // add the TableRow to the TableLayout
             table.addView(row, new TableLayout.LayoutParams(Toolbar.LayoutParams.WRAP_CONTENT, Toolbar.LayoutParams.WRAP_CONTENT));
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+        Intent i = new Intent(ListaFrequenciaActivity.this, ActivityDisciplinas.class);
+        startActivity(i);
     }
 }
