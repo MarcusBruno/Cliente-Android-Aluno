@@ -157,7 +157,7 @@ public class LoginActivity extends AppCompatActivity {
                             }
                         }).create().show();
             } else if(CONEXAO && status.equalsIgnoreCase("-1")) {
-                builder.setMessage("Você não pode entrar com outro celular")
+                builder.setMessage("Você não pode acessar com o celular de outro aluno!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                             }

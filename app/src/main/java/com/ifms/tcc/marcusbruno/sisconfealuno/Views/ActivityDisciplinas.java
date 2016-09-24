@@ -71,7 +71,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
-        builder = new AlertDialog.Builder(ActivityDisciplinas.this);
+        builder = new AlertDialog.Builder(this);
 
         new getChamadaAberta().execute();
         new getDisciplinasAluno().execute();
@@ -88,7 +88,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         menu.setHeaderTitle("Opções ");
         //GroupID - ItemId - OrderForId
         menu.add(0, 1, 0, "Visualizar Fatas/Presenças");
-        menu.add(0, 2, 1, "Enviar Notificação aos Alunos");
+        //menu.add(0, 2, 1, "Enviar Notificação aos Alunos");
     }
 
     @Override
@@ -289,7 +289,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
     private void notificarChamadaAberta() {
         builder = new AlertDialog.Builder(this);
         try {
-            builder.setMessage("O professor(a) " + chamadaAberta.getString("nome_professor") + "abriu a chamada da disciplina de " + chamadaAberta.getString("nome_disciplina") + ". Deseja autenticar a presença?")
+            builder.setMessage("O professor(a) " + chamadaAberta.getString("nome_professor") + " abriu a chamada da disciplina de " + chamadaAberta.getString("nome_disciplina") + ". Deseja autenticar a presença?")
                     .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             new autenticarPresença().execute();
