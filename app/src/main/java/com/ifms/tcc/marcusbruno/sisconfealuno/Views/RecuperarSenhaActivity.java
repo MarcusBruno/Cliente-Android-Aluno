@@ -8,19 +8,18 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputFilter;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
 import com.ifms.tcc.marcusbruno.sisconfealuno.R;
-import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.MacAddress;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.Routes;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.ServiceHandler;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,7 +31,7 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
     ServiceHandler sh = new ServiceHandler();
     private AlertDialog.Builder builder;
     EditText etRecuperarSenhaRA;
-    Button btnRecuperarSenhaRA;
+    Button btnRecuperarSenhaRA, btnCadastrarNovaSenha;
     String rPRecuperarSenha;
     String codigoSegurancaSistema;
     String senha;
@@ -46,6 +45,7 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
 
         builder = new AlertDialog.Builder(this);
         btnRecuperarSenhaRA = (Button) findViewById(R.id.button_recuperar_senha_ra);
+        btnCadastrarNovaSenha = (Button) findViewById(R.id.button_cadastrar_nova_senha);
         etRecuperarSenhaRA = (EditText) findViewById(R.id.edit_text_recuperar_senha_ra);
         btnRecuperarSenhaRA.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +70,6 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
         protected Integer doInBackground(String... params) {
             List<NameValuePair> pairs = new ArrayList<NameValuePair>();
             pairs.add(new BasicNameValuePair("ra", etRecuperarSenhaRA.getText().toString()));
-            pairs.add(new BasicNameValuePair("mac_address", MacAddress.getValueMacAddres()));
 
             try {
                 JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlRecuperarSenhaAluno(), ServiceHandler.POST, pairs));
@@ -116,7 +115,7 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
 
                                 alertDialog.setCancelable(true);
                                 if(input.getText().toString().equalsIgnoreCase(codigoSegurancaSistema)){
-                                    //inserirNovaSenha();
+                                    validarCodigoSeguranca();
                                 }else{
 
                                 }
@@ -127,5 +126,77 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
             }
         }
     }
+
+    void validarCodigoSeguranca(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        builder.setTitle("Nova Senha");
+        final View view = inflater.inflate(R.layout.dialog_recuperar_senha, null);
+        builder.setView(view);
+
+        btnCadastrarNovaSenha = (Button) view.findViewById(R.id.button_cadastrar_nova_senha);
+        btnCadastrarNovaSenha.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText confirmarNovaSenha = (EditText) view.findViewById(R.id.edit_text_confirmar_nova_senha);
+                EditText novaSenha = (EditText) view.findViewById(R.id.edit_text_nova_senha);
+
+                if(novaSenha.getText().toString().equalsIgnoreCase(confirmarNovaSenha.getText().toString())){
+                    //Envia ao banco de dados a nova senha do usuário.
+                    senha = novaSenha.getText().toString();
+                    new inserirNovaSenha().execute();
+                }
+            }
+        });
+
+        builder.create().show();
+    }
+
+    public class inserirNovaSenha extends AsyncTask<String, Integer, Integer> {
+        private String status = "";
+        private boolean CONEXAO;
+        @Override
+        protected void onPreExecute() {}
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            List<NameValuePair> pairs = new ArrayList<NameValuePair>();
+            pairs.add(new BasicNameValuePair("ra", etRecuperarSenhaRA.getText().toString()));
+            pairs.add(new BasicNameValuePair("senha", senha));
+            try {
+                JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlInserirSenhaAluno(), ServiceHandler.PUT, pairs));
+                if (jsonObj != null) {
+                    CONEXAO = true;
+                    if (jsonObj.getString("status").equalsIgnoreCase("1")) {
+                        status = "1";
+                    }
+                } else {
+                    CONEXAO = false;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer numero) {
+            if(CONEXAO && status.equalsIgnoreCase("1")){
+                AlertDialog.Builder builder = new AlertDialog.Builder(RecuperarSenhaActivity.this);
+                builder.setTitle("Nova Senha");
+                builder.setMessage("Sua senha foi alterada com sucesso!")
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+
+                                finish();
+                                Intent i = new Intent(RecuperarSenhaActivity.this, LoginActivity.class);
+                                startActivity(i);
+                            }
+                        }).create().show();
+            }
+        }
+    }
+
 
 }

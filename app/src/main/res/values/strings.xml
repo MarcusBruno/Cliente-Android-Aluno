@@ -9,4 +9,12 @@
     <string name="title_activity_cadastrar">Cadastrar</string>
     <string name="title_activity_lista_frequencia">Lista de Frequencia</string>
     <string name="title_activity_recuperar_senha">RecuperarSenhaActivity</string>
+    <string name="ativar_internet_localizacao">Você deve ativar sua conexão com a internet e a localização do seu aparelho!</string>
+    <string name="desconectar">Você tem certeza que deseja se desconectar?</string>
+    <string name="presenca_sucesso">"Presença autenticada com sucesso ! "</string>
+    <string name="aluno_fora_da_sala">Você não está em sala de aula! Sua presença não foi autenticada.</string>
+    <string name="nenhuma_chamada_aberta">Não existe chamada aberta até o momento!</string>
+    <string name="carregando">Carregando...</string>
+    <string name="sim">SIM</string>
+    <string name="nao">NÃO</string>
 </resources>

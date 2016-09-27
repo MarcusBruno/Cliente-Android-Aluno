@@ -5,25 +5,17 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Models.Aluno;
 import com.ifms.tcc.marcusbruno.sisconfealuno.R;
+import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.DetectaConexao;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.MacAddress;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.Routes;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.ServiceHandler;
@@ -38,16 +30,14 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private Button loginBtn, cadastrarBtn;
+    private Button loginBtn, cadastrarBtn, recuperarSenhaBtn;
     private EditText raET, passET;
-    private boolean CONEXAO;
+    private boolean conexaoServidor;
     private ProgressDialog dialog;
     private String ra, passAluno;
     private AlertDialog.Builder builder;
@@ -72,6 +62,7 @@ public class LoginActivity extends AppCompatActivity {
 
         loginBtn = (Button) findViewById(R.id.button_login);
         cadastrarBtn = (Button) findViewById(R.id.button_cadastrar_me);
+        recuperarSenhaBtn = (Button) findViewById(R.id.button_recuperar_senha);
         raET = (EditText) findViewById(R.id.edit_text_login_rp);
         passET = (EditText) findViewById(R.id.edit_text_login_senha);
         builder = new AlertDialog.Builder(LoginActivity.this);
@@ -101,6 +92,15 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+
+        recuperarSenhaBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+                Intent i = new Intent(LoginActivity.this, RecuperarSenhaActivity.class);
+                startActivity(i);
+            }
+        });
     }
 
     public class AutenticarLogin extends AsyncTask<String, Integer, Integer> {
@@ -108,6 +108,7 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             dialog = ProgressDialog.show(LoginActivity.this, "", "Carregando...", true);
+            dialog.show();
         }
 
         @Override
@@ -122,7 +123,7 @@ public class LoginActivity extends AppCompatActivity {
                 String jsonStr = sh.makeServiceCall(Routes.getUrlLoginAluno(), ServiceHandler.POST, pairs);
                 //Tratamento em caso da conexão falhar
                 if (jsonStr != null) {
-                    CONEXAO = true;
+                    conexaoServidor = true;
                     JSONObject jsonObj = new JSONObject(jsonStr);
                     //Tratamento em caso do objeto retornar null;
                     if (!jsonObj.equals("")) {
@@ -135,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     }
                 } else {
-                    CONEXAO = false;
+                    conexaoServidor = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -146,23 +147,23 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Integer numero) {
             dialog.dismiss();
-            if (CONEXAO && status.equalsIgnoreCase("1") && ALUNO != null) {
+            if (conexaoServidor && status.equalsIgnoreCase("1") && ALUNO != null) {
                 Intent i = new Intent(LoginActivity.this, ActivityDisciplinas.class);
                 startActivity(i);
                 finish();
-            } else if (CONEXAO && status.equalsIgnoreCase("0")) {
+            } else if (conexaoServidor && status.equalsIgnoreCase("0")) {
                 builder.setMessage("Login e/ou Senha estão errados. Tente novamente!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                             }
                         }).create().show();
-            } else if(CONEXAO && status.equalsIgnoreCase("-1")) {
+            } else if(conexaoServidor && status.equalsIgnoreCase("-1")) {
                 builder.setMessage("Você não pode acessar com o celular de outro aluno!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                             }
                         }).create().show();
-            }else if(!CONEXAO) {
+            }else if(!conexaoServidor) {
                 builder.setMessage("Falha de comunicação com o servidor. Tente novamente!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {

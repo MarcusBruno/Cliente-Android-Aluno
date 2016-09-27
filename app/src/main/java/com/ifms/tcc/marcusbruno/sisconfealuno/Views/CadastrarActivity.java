@@ -1,36 +1,20 @@
 package com.ifms.tcc.marcusbruno.sisconfealuno.Views;
 
-import android.Manifest;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
-import com.ifms.tcc.marcusbruno.sisconfealuno.Models.Aluno;
 import com.ifms.tcc.marcusbruno.sisconfealuno.R;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.MacAddress;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.Routes;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.ServiceHandler;
-import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
-import com.karumi.dexter.PermissionToken;
-import com.karumi.dexter.listener.PermissionDeniedResponse;
-import com.karumi.dexter.listener.PermissionGrantedResponse;
-import com.karumi.dexter.listener.PermissionRequest;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
-import com.karumi.dexter.listener.single.PermissionListener;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -41,11 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CadastrarActivity extends AppCompatActivity {
-    private boolean CONEXAO;
+    private boolean conexaoServidor;
     private Button cadastrarBtn;
     private EditText et_nome, et_email, et_telefone, et_login_ra, et_senha, et_confirmar_senha;
     private AlertDialog.Builder builder;
-    private ProgressDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +36,7 @@ public class CadastrarActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cadastrar);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
+        conexaoServidor = false;
         cadastrarBtn = (Button) findViewById(R.id.button_cadastrar);
         et_nome = (EditText) findViewById(R.id.edit_text_nome);
         et_email = (EditText) findViewById(R.id.edit_text_email);
@@ -74,7 +57,7 @@ public class CadastrarActivity extends AppCompatActivity {
                                 if(!et_senha.getText().toString().equalsIgnoreCase("") && !et_confirmar_senha.getText().toString().equalsIgnoreCase("")){
                                     if(et_senha.getText().toString().equalsIgnoreCase(et_confirmar_senha.getText().toString())){
 
-                                        new AutenticarLogin().execute();
+                                        new CadastrarAluno().execute();
                                     }else{
                                         //Senhas Diferentes
                                         builder.setMessage("As senhas não coincidem")
@@ -121,12 +104,10 @@ public class CadastrarActivity extends AppCompatActivity {
         });
     }
 
-    public class AutenticarLogin extends AsyncTask<String, Integer, Integer> {
-        String status;
+    public class CadastrarAluno extends AsyncTask<String, Integer, Integer> {
+        String status="";
         @Override
-        protected void onPreExecute() {
-            dialog = ProgressDialog.show(CadastrarActivity.this, "", "Carregando...", true);
-        }
+        protected void onPreExecute() {}
 
         @Override
         protected Integer doInBackground(String... params) {
@@ -147,7 +128,7 @@ public class CadastrarActivity extends AppCompatActivity {
                 String jsonStr = sh.makeServiceCall(Routes.getUrlCadastrarAluno(), ServiceHandler.POST, pairs);
                 //Tratamento em caso da conexão falhar
                 if (jsonStr != null) {
-                    CONEXAO = true;
+                    conexaoServidor = true;
                     JSONObject jsonObj = new JSONObject(jsonStr);
                     //Tratamento em caso do objeto retornar null;
                     if (!jsonObj.equals("")) {
@@ -155,7 +136,7 @@ public class CadastrarActivity extends AppCompatActivity {
                         status = jsonObj.getString("status");
                     }
                 } else {
-                    CONEXAO = false;
+                    conexaoServidor = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -165,10 +146,8 @@ public class CadastrarActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Integer numero) {
-            dialog.dismiss();
-            dialog.cancel();
             builder = new AlertDialog.Builder(CadastrarActivity.this);
-            if (CONEXAO && status.equalsIgnoreCase("1")){
+            if (conexaoServidor && status.equalsIgnoreCase("1")){
                 builder.setMessage("Cadastro Realizado com sucesso!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
@@ -177,22 +156,22 @@ public class CadastrarActivity extends AppCompatActivity {
                                 startActivity(i);
                             }
                         }).create().show();
-            }else if(CONEXAO && status.equalsIgnoreCase("0")){
+            }else if(conexaoServidor && status.equalsIgnoreCase("0")){
                 builder.setMessage("Falha no cadastro! \n Você não pode se cadastrar com um celular que já está cadastrado com outro usuário.")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {}
                         }).create().show();
-            }else if(CONEXAO && status.equalsIgnoreCase("-1")){
+            }else if(conexaoServidor && status.equalsIgnoreCase("-1")){
                 builder.setMessage("Ocorreu um erro no processo de cadastro, por favor entre em contato com o suporte!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {}
                         }).create().show();
-            }else if(CONEXAO && status.equalsIgnoreCase("-0")){
+            }else if(conexaoServidor && status.equalsIgnoreCase("-0")){
                 builder.setMessage("Usuário já cadastrado!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {}
                         }).create().show();
-            }else if(!CONEXAO){
+            }else if(!conexaoServidor){
                 builder.setMessage("Falha de comunicação com o servidor. Tente novamente!")
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {}

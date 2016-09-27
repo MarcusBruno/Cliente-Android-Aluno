@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by marcusbruno on 05/09/16.
+ * source http://stackoverflow.com/questions/33103798/how-to-get-wi-fi-mac-address-in-android-marshmallow
  */
 public class MacAddress {
 

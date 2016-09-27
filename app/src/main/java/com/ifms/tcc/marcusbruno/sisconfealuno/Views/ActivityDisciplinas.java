@@ -28,6 +28,7 @@ import com.google.android.gms.location.LocationServices;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Models.Aluno;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Models.Disciplina;
 import com.ifms.tcc.marcusbruno.sisconfealuno.R;
+import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.DetectaConexao;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.GeoCoordinate;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.Routes;
 import com.ifms.tcc.marcusbruno.sisconfealuno.Utils.ServiceHandler;
@@ -45,12 +46,12 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
     private ProgressDialog dialog;
     ServiceHandler sh = new ServiceHandler();
-    private boolean CONEXAO;
+    private boolean conexaoServidor;
     private Aluno ALUNO = LoginActivity.ALUNO;
     private AlertDialog.Builder builder;
     private JSONObject chamadaAberta;
-    private GoogleApiClient mGoogleApiClient;
-    private LocationRequest loc;
+    private GoogleApiClient googleApiClient;
+    private LocationRequest locationRequest;
     private ListView disciplinasLV;
     protected static ArrayList<Disciplina> DISCIPLINAS;
     private ArrayList<String> disciplinasAdapter;
@@ -67,16 +68,26 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         registerForContextMenu(disciplinasLV);
 
         dialog = new ProgressDialog(this);
-        dialog.setMessage("Carregando...");
-
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
+        dialog.setMessage(getString(R.string.carregando));
         builder = new AlertDialog.Builder(this);
+        disciplinasAdapter = new ArrayList<>();
 
-        new getChamadaAberta().execute();
-        new getDisciplinasAluno().execute();
+        if (new DetectaConexao(this).existeConexao() && new DetectaConexao(this).localizacaoAtiva()) {
+            googleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
+            new getChamadaAberta().execute();
+            new getDisciplinasAluno().execute();
+        } else {
+            builder.setMessage(R.string.ativar_internet_localizacao)
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            finish();
+                            Intent i = new Intent(ActivityDisciplinas.this, LoginActivity.class);
+                            startActivity(i);
+                        }
+                    }).create().show();
+        }
     }
-
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
@@ -87,7 +98,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
         menu.setHeaderTitle("Opções ");
         //GroupID - ItemId - OrderForId
-        menu.add(0, 1, 0, "Visualizar Fatas/Presenças");
+        menu.add(0, 1, 0, "Visualizar Faltas/Presenças");
         //menu.add(0, 2, 1, "Enviar Notificação aos Alunos");
     }
 
@@ -97,7 +108,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
             Intent i = new Intent(ActivityDisciplinas.this, ListaFrequenciaActivity.class);
             i.putExtra("codigoDisciplina", DISCIPLINAS.get(itemSelected).getCodigo().toString());
-            i.putExtra("nomeDisciplina",  DISCIPLINAS.get(itemSelected).getNome());
+            i.putExtra("nomeDisciplina", DISCIPLINAS.get(itemSelected).getNome());
             startActivity(i);
             finish();
         } else if (item.getItemId() == 2) {
@@ -110,7 +121,6 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         return true;
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_disciplinas, menu);
@@ -122,20 +132,32 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         builder = new AlertDialog.Builder(ActivityDisciplinas.this);
         switch (item.getItemId()) {
             case R.id.logout:
-                builder.setMessage("Você tem certeza que deseja se desconectar?")
-                        .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
+                builder.setMessage(R.string.desconectar)
+                        .setPositiveButton(R.string.sim, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 finish();
                                 Intent i = new Intent(ActivityDisciplinas.this, LoginActivity.class);
                                 startActivity(i);
                             }
-                        }).setNegativeButton("NÃO", new DialogInterface.OnClickListener() {
+                        }).setNegativeButton(R.string.nao, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int i) {
                     }
                 }).create().show();
                 return true;
             case R.id.refresh:
-                new getChamadaAberta().execute();
+                if (new DetectaConexao(this).existeConexao() && new DetectaConexao(this).localizacaoAtiva()) {
+                    new getChamadaAberta().execute();
+                    new getDisciplinasAluno().execute();
+                } else {
+                    builder.setMessage(R.string.ativar_internet_localizacao)
+                            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    finish();
+                                    Intent i = new Intent(ActivityDisciplinas.this, LoginActivity.class);
+                                    startActivity(i);
+                                }
+                            }).create().show();
+                }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -144,36 +166,42 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
     protected void onStart() {
         super.onStart();
-        mGoogleApiClient.connect();
+        if (googleApiClient != null) {
+            googleApiClient.connect();
+        }
     }
 
     protected void onResume() {
         super.onResume();
-        if (!mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.connect();
+        if (googleApiClient != null) {
+            if (!googleApiClient.isConnected()) {
+                googleApiClient.connect();
+            }
         }
     }
 
     protected void onStop() {
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-            mGoogleApiClient.disconnect();
+        if (googleApiClient != null && googleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+            googleApiClient.disconnect();
         }
         super.onStop();
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        configuracoes();
+        configuracaoLocalizacao();
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        mGoogleApiClient.connect();
+        googleApiClient.connect();
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) { mGoogleApiClient.connect(); }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        googleApiClient.connect();
+    }
 
     @Override
     public void onLocationChanged(Location location) {
@@ -182,10 +210,21 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
     }
 
     public class getDisciplinasAluno extends AsyncTask<String, Integer, Integer> {
-        private String status = "";
-
         @Override
         protected void onPreExecute() {
+            if (!new DetectaConexao(ActivityDisciplinas.this).existeConexao() || !new DetectaConexao(ActivityDisciplinas.this).localizacaoAtiva()) {
+                builder.setMessage(R.string.ativar_internet_localizacao)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                finish();
+                                Intent i = new Intent(ActivityDisciplinas.this, LoginActivity.class);
+                                startActivity(i);
+                            }
+                        }).create().show();
+            }else{
+                disciplinasAdapter.clear();
+            }
+
         }
 
         @Override
@@ -197,12 +236,12 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarDisciplinasAluno(), ServiceHandler.POST, pairs));
                 //Tratamento em caso da conexão falhar
                 if (jsonObj != null) {
-                    CONEXAO = true;
+                    conexaoServidor = true;
                     //Tratamento em caso do objeto retornar null;
                     if (!jsonObj.equals("")) {
-                        CONEXAO = true;
+                        conexaoServidor = true;
                         DISCIPLINAS = new ArrayList<>();
-                        disciplinasAdapter = new ArrayList<>();
+
 
                         for (int i = 0; i < jsonObj.length(); i++) {
                             JSONObject c = jsonObj.getJSONObject(i);
@@ -212,7 +251,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                         }
                     }
                 } else {
-                    CONEXAO = false;
+                    conexaoServidor = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -234,6 +273,16 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         @Override
         protected void onPreExecute() {
             chamadaAberta = null;
+            if (!new DetectaConexao(ActivityDisciplinas.this).existeConexao() || !new DetectaConexao(ActivityDisciplinas.this).localizacaoAtiva()) {
+                builder.setMessage(R.string.ativar_internet_localizacao)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                finish();
+                                Intent i = new Intent(ActivityDisciplinas.this, LoginActivity.class);
+                                startActivity(i);
+                            }
+                        }).create().show();
+            }
         }
 
         @Override
@@ -244,7 +293,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                 String jsonStr = sh.makeServiceCall(Routes.getUrlBuscarChamadaAberta(), ServiceHandler.POST, pairs);
                 //Tratamento em caso da conexão falhar
                 if (jsonStr != null) {
-                    CONEXAO = true;
+                    conexaoServidor = true;
                     JSONObject jsonObj = new JSONObject(jsonStr);
                     //Tratamento em caso do objeto retornar null;
                     if (!jsonObj.equals("")) {
@@ -255,7 +304,7 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                         }
                     }
                 } else {
-                    CONEXAO = false;
+                    conexaoServidor = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -267,16 +316,16 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         protected void onPostExecute(Integer numero) {
 
             builder = new AlertDialog.Builder(ActivityDisciplinas.this);
-            if (CONEXAO && status.equalsIgnoreCase("1")) {
+            if (conexaoServidor && status.equalsIgnoreCase("1")) {
                 notificarChamadaAberta();
 
-            } else if (CONEXAO && status.equalsIgnoreCase("0")) {
-                builder.setMessage("Não existe chamada aberta até o momento!")
+            } else if (conexaoServidor && status.equalsIgnoreCase("0")) {
+                builder.setMessage(R.string.nenhuma_chamada_aberta)
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                             }
                         }).create().show();
-            } else if (!CONEXAO) {
+            } else if (!conexaoServidor) {
                 builder.setMessage(R.string.connection_failure)
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
@@ -293,7 +342,6 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                     .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             new autenticarPresença().execute();
-
                         }
                     }).setNegativeButton("NÃO", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
@@ -311,23 +359,32 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
 
         @Override
         protected void onPreExecute() {
+            if(!new DetectaConexao(ActivityDisciplinas.this).existeConexao() || !new DetectaConexao(ActivityDisciplinas.this).localizacaoAtiva()){
+                builder.setMessage(R.string.ativar_internet_localizacao)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                finish();
+                                Intent i = new Intent(ActivityDisciplinas.this, LoginActivity.class);
+                                startActivity(i);
+                            }
+                        }).create().show();
+            }
             dialog.show();
         }
 
         @Override
         protected Integer doInBackground(String... params) {
-            while (mGoogleApiClient.isConnecting()) {
-                System.out.println("Conectando...");
+            while (googleApiClient.isConnecting()) {
+                System.out.println(R.string.carregando);
             }
             try {
 
-                if(!ALUNO.getLatitude().isEmpty() && !ALUNO.getLongitude().isEmpty() && !chamadaAberta.getString("latitude_professor").isEmpty() && !chamadaAberta.getString("longitude_professor").isEmpty()){
-                    GeoCoordinate aluno = new GeoCoordinate(Double.parseDouble(ALUNO.getLatitude()),Double.parseDouble(ALUNO.getLongitude()));
+                if (!ALUNO.getLatitude().isEmpty() && !ALUNO.getLongitude().isEmpty() && !chamadaAberta.getString("latitude_professor").isEmpty() && !chamadaAberta.getString("longitude_professor").isEmpty()) {
+                    GeoCoordinate aluno = new GeoCoordinate(Double.parseDouble(ALUNO.getLatitude()), Double.parseDouble(ALUNO.getLongitude()));
                     GeoCoordinate professor = new GeoCoordinate(Double.parseDouble(chamadaAberta.getString("latitude_professor")), Double.parseDouble(chamadaAberta.getString("longitude_professor")));
-                    distancia = (aluno.distanceInKm(professor)*1000);
+                    distancia = (aluno.distanceInKm(professor) * 1000);
 
-                    if(distancia < 15.0){
-
+                    if (distancia < 30.0) {
                         presenca = "1";
                     }
                 }
@@ -343,21 +400,18 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
                 String jsonStr = sh.makeServiceCall(Routes.getUrlAutenticarPresença(), ServiceHandler.POST, param);
 
                 if (jsonStr != null) {
-                    CONEXAO = true;
+                    conexaoServidor = true;
                     JSONObject jsonObj = new JSONObject(jsonStr);
                     if (!jsonObj.equals("")) {
                         //Get status of response;
                         status = jsonObj.getString("status");
                     }
                 } else {
-                    CONEXAO = false;
+                    conexaoServidor = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, ActivityDisciplinas.this);
             return null;
         }
 
@@ -367,32 +421,32 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
             dialog.dismiss();
             Toast.makeText(ActivityDisciplinas.this, distancia + "", Toast.LENGTH_LONG).show();
             builder = new AlertDialog.Builder(ActivityDisciplinas.this);
-            if (CONEXAO && status.equalsIgnoreCase("1")) {
+            if (conexaoServidor && status.equalsIgnoreCase("1")) {
 
                 if (presenca.equalsIgnoreCase("1")) {
-                    builder.setMessage("Presença autenticada com sucesso ! ").setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    builder.setMessage(R.string.presenca_sucesso).setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                         }
                     }).create().show();
                 } else {
-                    builder.setMessage("Você não está em sala de aula! Sua presença não foi autenticada.")
+                    builder.setMessage(R.string.aluno_fora_da_sala)
                             .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int id) {
                                 }
                             }).create().show();
                 }
                 //Encerra Intent
-            } else if (CONEXAO && status.equalsIgnoreCase("0")) {
+            } else if (conexaoServidor && status.equalsIgnoreCase("0")) {
                 builder.setMessage(ALUNO.getNome().split(" ")[0] + " você já autenticou sua presença!").setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                     }
                 }).create().show();
-            } else if (CONEXAO && status.equalsIgnoreCase("-1")) {
+            } else if (conexaoServidor && status.equalsIgnoreCase("-1")) {
                 builder.setMessage(ALUNO.getNome().split(" ")[0] + " esta chamada já está encerrada!").setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                     }
                 }).create().show();
-            } else if (!CONEXAO) {
+            } else if (!conexaoServidor) {
                 builder.setMessage(R.string.connection_failure)
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
@@ -402,13 +456,12 @@ public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiC
         }
     }
 
-    void configuracoes() {
-
-        loc = LocationRequest.create();
-        loc.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        loc.setInterval(5 * 1000);
-        loc.setFastestInterval(1 * 1000);
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, loc, ActivityDisciplinas.this);
-
+    private void configuracaoLocalizacao() {
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(1 * 1000);
+        locationRequest.setFastestInterval(1 * 1000);
+        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, ActivityDisciplinas.this);
     }
+
 }

@@ -1,14 +1,11 @@
 package com.ifms.tcc.marcusbruno.sisconfealuno.Views;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -34,7 +31,7 @@ import java.util.TimeZone;
 
 public class ListaFrequenciaActivity extends AppCompatActivity {
     ServiceHandler sh = new ServiceHandler();
-    private boolean CONEXAO;
+    private boolean conexaoServidor;
     private Aluno ALUNO = LoginActivity.ALUNO;
     private ArrayList<FaltasEPresencas> listaFrequencia;
     private String codigoDisciplina;
@@ -67,10 +64,10 @@ public class ListaFrequenciaActivity extends AppCompatActivity {
                 JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlBuscarListaFrequenciaAluno(), ServiceHandler.POST, pairs));
                 //Tratamento em caso da conexão falhar
                 if (jsonObj != null) {
-                    CONEXAO = true;
+                    conexaoServidor = true;
                     //Tratamento em caso do objeto retornar null;
                     if (jsonObj.getString("status").equalsIgnoreCase("1")) {
-                        CONEXAO = true;
+                        conexaoServidor = true;
 
                         listaFrequencia = new ArrayList<>();
                         JSONArray jsonArr = jsonObj.getJSONArray("message");
@@ -85,7 +82,7 @@ public class ListaFrequenciaActivity extends AppCompatActivity {
                         }
                     }
                 } else {
-                    CONEXAO = false;
+                    conexaoServidor = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
